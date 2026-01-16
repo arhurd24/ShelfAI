@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+python-multipart
+google-cloud-aiplatform
+google-cloud-texttospeech
+google-cloud-storage
+python-docx
