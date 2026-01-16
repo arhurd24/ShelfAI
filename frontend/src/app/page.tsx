@@ -1,15 +1,20 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { Plus, FileText, Headphones, Music, Loader2 } from 'lucide-react';
 
-export default function CloudShelf() {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
+interface FileData {
+  name: string;
+  audioUrl: string;
+  status?: string;
+}
 
-  // This line automatically picks the Cloud URL or stays local for testing
+export default function CloudShelf() {
+  const [files, setFiles] = useState<FileData[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-  const handleUpload = async (e) => {
+  const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setLoading(true);
