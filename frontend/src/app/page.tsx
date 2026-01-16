@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Plus, FileText, Headphones, Music, Loader2, Zap, Clock, Play, Download } from 'lucide-react';
 
 interface FileData {
@@ -14,6 +14,21 @@ export default function ShelfAI_v2() {
   const [activeFile, setActiveFile] = useState<FileData | null>(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+  // --- PERSISTENCE LOGIC: Runs every time the page loads ---
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/files`);
+        if (!res.ok) throw new Error("Backend unreachable");
+        const data = await res.json();
+        setFiles(data);
+      } catch (err) {
+        console.error("Failed to load existing files:", err);
+      }
+    };
+    fetchFiles();
+  }, [API_BASE]);
 
   const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,7 +53,7 @@ export default function ShelfAI_v2() {
   return (
     <div className="flex min-h-screen bg-[#050507] text-slate-200 font-sans selection:bg-indigo-500/30">
       
-      {/* SIDEBAR: Glassmorphism Effect */}
+      {/* SIDEBAR */}
       <aside className="w-80 border-r border-white/5 bg-white/[0.02] backdrop-blur-xl p-8 flex flex-col">
         <div className="mb-10 flex items-center gap-3">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.4)]">
@@ -78,8 +93,6 @@ export default function ShelfAI_v2() {
 
       {/* MAIN VIEWPORT */}
       <main className="flex-1 flex flex-col bg-gradient-to-b from-[#0a0a0f] to-[#050507]">
-        
-        {/* HEADER AREA */}
         <header className="h-20 border-b border-white/5 flex items-center justify-between px-12">
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
@@ -87,16 +100,9 @@ export default function ShelfAI_v2() {
                     <span className="text-[10px] font-bold text-green-500 uppercase tracking-tighter">Cloud Backend Online</span>
                 </div>
             </div>
-            <div className="flex items-center gap-4">
-                <button className="text-xs font-bold text-slate-400 hover:text-white transition">Docs</button>
-                <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10" />
-            </div>
         </header>
 
-        {/* CONTENT AREA */}
         <div className="flex-1 flex flex-col items-center justify-center p-12 relative overflow-hidden">
-          
-          {/* Ambient Background Glows */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
           {loading ? (
@@ -114,23 +120,17 @@ export default function ShelfAI_v2() {
                 <div className="flex items-start justify-between mb-12">
                   <div>
                     <h2 className="text-4xl font-black text-white mb-4 tracking-tighter italic uppercase">{activeFile.name}</h2>
-                    <div className="flex gap-4">
-                        <div className="flex items-center gap-2 text-slate-400">
-                            <Clock className="w-3 h-3" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">3:45 Duration</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-indigo-400">
-                            <Zap className="w-3 h-3 fill-current" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider font-mono">High Yield Analysis</span>
-                        </div>
+                    <div className="flex gap-4 text-indigo-400">
+                        <Zap className="w-3 h-3 fill-current" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider font-mono">High Yield Analysis Loaded</span>
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <button className="p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition group">
-                        <Download className="w-5 h-5 text-slate-300 group-hover:text-white" />
-                    </button>
                     <button 
-                      onClick={() => new Audio(activeFile.audioUrl).play()}
+                      onClick={() => {
+                        const audio = document.getElementById('main-player') as HTMLAudioElement;
+                        audio.play();
+                      }}
                       className="flex items-center gap-3 px-8 py-4 bg-indigo-600 rounded-2xl hover:bg-indigo-500 transition shadow-[0_10px_30px_rgba(79,70,229,0.3)] group"
                     >
                         <Play className="w-5 h-5 text-white fill-current group-hover:scale-110 transition" />
@@ -138,15 +138,15 @@ export default function ShelfAI_v2() {
                     </button>
                   </div>
                 </div>
-
+                <audio id="main-player" key={activeFile.audioUrl} className="hidden" controls src={activeFile.audioUrl}></audio>
                 <div className="grid grid-cols-3 gap-6">
                     <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Anki Readiness</p>
-                        <p className="text-xl font-bold text-white">94% <span className="text-[10px] text-green-500">+2.1</span></p>
+                        <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Status</p>
+                        <p className="text-xl font-bold text-white uppercase tracking-tight italic">Saved</p>
                     </div>
                     <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Complexity</p>
-                        <p className="text-xl font-bold text-white uppercase tracking-tight">Medium</p>
+                        <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Intelligence</p>
+                        <p className="text-xl font-bold text-white uppercase tracking-tight">Gemini 2.0</p>
                     </div>
                     <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
                         <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">Source Health</p>
@@ -157,18 +157,18 @@ export default function ShelfAI_v2() {
             </div>
           ) : (
             <div className="z-10 text-center">
-              <div className="w-24 h-24 bg-indigo-600/5 rounded-[2rem] border border-white/5 flex items-center justify-center mb-8 mx-auto rotate-12 group hover:rotate-0 transition-transform duration-500">
+              <div className="w-24 h-24 bg-indigo-600/5 rounded-[2rem] border border-white/5 flex items-center justify-center mb-8 mx-auto rotate-12">
                 <Headphones className="w-10 h-10 text-slate-700" />
               </div>
               <h2 className="text-3xl font-bold text-white mb-3 tracking-tighter italic">Ready for Briefing</h2>
               <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] max-w-sm mx-auto leading-loose">
-                Upload your shelf materials and Emma will transform them into high-yield audio and flashcards.
+                Your past uploads are being fetched from the cloud.
               </p>
             </div>
           )}
         </div>
 
-        {/* FOOTER PLAYER (Minimalist) */}
+        {/* FOOTER PLAYER */}
         {activeFile && (
             <footer className="h-24 border-t border-white/5 bg-[#050507] flex items-center px-12 gap-8 z-20">
                 <div className="flex items-center gap-4 w-64">
@@ -177,24 +177,11 @@ export default function ShelfAI_v2() {
                     </div>
                     <div className="overflow-hidden">
                         <p className="text-[11px] font-bold text-white truncate uppercase tracking-tight">{activeFile.name}</p>
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest">Listening Live</p>
+                        <p className="text-[9px] text-slate-500 uppercase tracking-widest italic">Cloud Streaming</p>
                     </div>
                 </div>
-                
-                <div className="flex-1 flex flex-col gap-2">
-                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                        <div className="w-1/3 h-full bg-indigo-500" />
-                    </div>
-                    <div className="flex justify-between text-[8px] font-black text-slate-600 uppercase tracking-widest">
-                        <span>1:12</span>
-                        <span>3:45</span>
-                    </div>
-                </div>
-
-                <div className="w-64 flex justify-end gap-4">
-                    <button className="text-slate-500 hover:text-white transition">
-                        <Download className="w-4 h-4" />
-                    </button>
+                <div className="flex-1">
+                   <audio controls src={activeFile.audioUrl} className="w-full h-8 accent-indigo-500" />
                 </div>
             </footer>
         )}
